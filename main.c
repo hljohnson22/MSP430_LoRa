@@ -1,9 +1,6 @@
 #include <msp430.h> 
 #include "main.h"
 
-
-uint8_t wireless_buf[33];
-uint8_t seesaw_buf[24];
 bool i2c_succeed;
 
 volatile uint8_t pulses;
@@ -12,14 +9,7 @@ volatile uint8_t pulses;
  */
 int main(void)
 {
-    uint8_t identification[8] = {0x00};           // 64-bit identification number
-    uint8_t temp[9] = {0x00};                       // temperature
-    uint8_t byte;                                 // 8-byte counter
-    uint8_t smsbTemp;
-    uint8_t lsbTemp;
-    uint8_t raw;
-    uint8_t decimalPlaceValue;
-    uint8_t finalTemp[4] = {0x00};
+
 
     WDTCTL = WDTPW | WDTHOLD;                     // Stop watchdog timer
 
@@ -45,17 +35,18 @@ int main(void)
         P5OUT |= BIT2;
 
         //temperature sensor data line
-        P1OUT |= BIT4;                                 // P1.4 output high
+        P1OUT |= BIT4;                                  // P1.4 output high
         P1DIR |= BIT4;                                  // P1.4 as output
 
         __delay_cycles(1000); //needs time to get the crystal working properly
 
+        //initialize SPI and I2C
         initGPIO_SPI();
         initSPI();
         initGPIO_I2C();
         initI2C();
 
-        __delay_cycles(10000);
+        __delay_cycles(10000); //wait for initialization
 
         //take temp reading
         __delay_cycles(RESET_DELAY*3);
@@ -77,30 +68,34 @@ int main(void)
           temp[byte] = Single_read();                 // Read output from sensor
 
 
-        smsbTemp = temp[1] << 4;
-        lsbTemp = temp[0] >> 4;
-        raw = smsbTemp | lsbTemp;
-        decimalPlaceValue = (lsbTemp << 4) ^ temp[0];
+        smsbTemp = temp[1] << 4;                      //find temp MSB
+        lsbTemp = temp[0] >> 4;                       //find temp lsb
+        raw = smsbTemp | lsbTemp;                     //concat temp values
+        decimalPlaceValue = (lsbTemp << 4) ^ temp[0]; //find decimal place value
         finalTemp[0] = raw;
         finalTemp[1] = decimalPlaceValue;
 
-        P1OUT |= BIT4;
+        P1OUT |= BIT4;                                //LED update for debugging
 
         //send over LoRa
         __delay_cycles(1000);
         while(!init_wireless());
 
-        uint16_t CrC = add_crc(finalTemp, 2, 1);
-        finalTemp[2] = (CrC & 0xFF00) >> 8;
+        uint16_t CrC = add_crc(finalTemp, 2, 1);      //calculate temp CRC
+        finalTemp[2] = (CrC & 0xFF00) >> 8;           //split CRC in two 8 bit variables
         finalTemp[3] = (CrC & 0x00FF);
 
-        wireless_send(finalTemp, 4); // send data
+        wireless_send(finalTemp, 4);                  //send data
 
         //TEST: without, should be turned off in sleep func
         //P5OUT ^= BIT4; //LoRa power off
         P1OUT ^= BIT0; //LED off
+        P5OUT |= BIT4;
+        P4OUT |= BIT5;
+        P5OUT |= BIT2;
 
-        sleep_10_min();
+
+        sleep_10_min();                               //low power mode 4 for 10 min sleep
 
     }
 }

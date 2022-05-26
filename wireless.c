@@ -13,6 +13,10 @@ void setModeIdle(void) {
     buf[0] = RH_RF95_MODE_STDBY;
     // go into standby mode
     SPI_Master_WriteReg(RH_RF95_REG_01_OP_MODE, buf, 1);
+
+    //test sleep
+    //buf[0] = RH_RF95_MODE_SLEEP;
+    //SPI_Master_WriteReg(RH_RF95_REG_01_OP_MODE, buf, 1);
 }
 
 void waitPacketSent(void) {

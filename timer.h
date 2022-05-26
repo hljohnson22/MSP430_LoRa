@@ -15,8 +15,5 @@ void sleep_pins(void);
 
 void sleep_10_min(void);
 
-void init_timer_B_open(void);
-
-void init_timer_B_close(void);
 
 #endif /* TIMER_H_ */

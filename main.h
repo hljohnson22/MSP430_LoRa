@@ -25,8 +25,15 @@
 
 #include "timer.h"
 
+uint8_t identification[8] = {0x00};        // 64-bit identification number
+uint8_t temp[9] = {0x00};                  // temperature
+uint8_t byte = {0x00};                     // 8-byte counter
+uint8_t smsbTemp = {0x00};                 // signed most sig bit temperature
+uint8_t lsbTemp = {0x00};                  // least sig bit temperature
+uint8_t raw = {0x00};                      // holds concatinated values
+uint8_t decimalPlaceValue = {0x00};
+uint8_t finalTemp[4] = {0x00};
+
 extern bool i2c_succeed;
-extern uint8_t wireless_buf[33];
-extern uint8_t seesaw_buf[24];
 
 #endif /* MAIN_H_ */
